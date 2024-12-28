@@ -1,0 +1,132 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: betzare
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: family-games-serverless
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: family-games-serverless
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: dev
+  region: eu-west-1
+  httpApi:
+    cors: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - 'dynamodb:PutItem'
+        - 'dynamodb:Get*'
+        - 'dynamodb:Scan*'
+        - 'dynamodb:UpdateItem'
+        - 'dynamodb:DeleteItem'
+      Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:service}-gameTable-${sls:stage}
+
+  environment:
+    DYNAMODB_GAME_TABLE: ${self:service}-gameTable-${sls:stage}
+    ENV: 'production'
+
+functions:
+  createGame:
+    handler: handler.createGame
+    events:
+      - httpApi:
+          path: /games
+          method: post
+  getGames:
+    handler: handler.getGames
+    events:
+      - httpApi:
+          path: /games
+          method: get
+  getGame:
+    handler: handler.getGame
+    events:
+      - httpApi:
+          path: /games/{gameId}/get
+          method: get
+  updateGame:
+    handler: handler.updateGame
+    events:
+      - httpApi:
+          path: /games/{gameId}/update
+          method: put
+  resetGame:
+    handler: handler.resetGame
+    events:
+      - httpApi:
+          path: /games/{gameId}/reset
+          method: put
+  deleteGame:
+    handler: handler.deleteGame
+    events:
+      - httpApi:
+          path: /games/{gameId}/delete
+          method: delete
+  createQuestion:
+    handler: handler.createQuestion
+    events:
+      - httpApi:
+          path: /games/{gameId}/questions/create
+          method: put
+  updateQuestion:
+    handler: handler.updateQuestion
+    events:
+      - httpApi:
+          path: /games/{gameId}/questions/{questionId}/update
+          method: put
+  createPlayer:
+    handler: handler.createPlayer
+    events:
+      - httpApi:
+          path: /games/{gameId}/players/create
+          method: put
+  updatePlayer:
+    handler: handler.updatePlayer
+    events:
+      - httpApi:
+          path: /games/{gameId}/players/{playerId}/update
+          method: put
+  deletePlayer:
+    handler: handler.deletePlayer
+    events:
+      - httpApi:
+          path: /games/{gameId}/players/{playerId}/delete
+          method: delete
+    environment:
+      DYNAMODB_USER_TABLE: ${self:service}-userTable-${sls:stage}
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    GameTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: gameId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: gameId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:service}-gameTable-${sls:stage}
+  #   NewResource:
+  #     Type: AWS::S3::Bucket
+  #     Properties:
+  #       BucketName: my-new-bucket
+  # Outputs:
+  #   NewOutput:
+  #     Description: "Description for the output"
+  #     Value: "Some output value"
+
+package:
+  exclude:
+    - node_modules/**
+    - venv/**
+  # patterns:
+  #   - '!exclude-me.js'
+  #   - '!exclude-me-dir/**'
+  #   - include-me.js
+  #   - include-me-dir/**

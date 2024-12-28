@@ -1,0 +1,22 @@
+{
+  "name": "family-games",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "serverless": "^4.4.18",
+    "serverless-http": "^3.2.0",
+    "shortid": "^2.2.8"
+  },
+  "devDependencies": {
+    "serverless-dynamodb-local": "^0.1.1",
+    "serverless-offline": "^14.4.0"
+  }
+}
