@@ -75,6 +75,12 @@ functions:
       - httpApi:
           path: /games/{gameId}/questions/{questionId}/update
           method: put
+  deleteQuestion:
+    handler: handler.deleteQuestion
+    events:
+      - httpApi:
+          path: /games/{gameId}/questions/{questionId}/delete
+          method: delete
   createPlayer:
     handler: handler.createPlayer
     events:

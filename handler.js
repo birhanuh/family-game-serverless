@@ -281,7 +281,7 @@ module.exports.resetGame = async (event) => {
 
   return {
     statusCode: 200,
-    body: JSON.stringify(result),
+    body: JSON.stringify(resultUpdate),
   };
 
   // dynamoDb.update(params, (error, result) => {
@@ -339,7 +339,12 @@ module.exports.createQuestion = async (event) => {
 
   const { question } = body;
 
-  '"question" must be a string'
+  if (typeof question !== 'string') {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({error: '"question" must be a string' }),
+    }
+  }
 
   // Short id
   const shortId = shortid.generate();
@@ -356,6 +361,21 @@ module.exports.createQuestion = async (event) => {
     ExpressionAttributeValues: {
       ':y': [{ questionId: shortId, question, isAsked: false }],
     },
+  };
+  
+  const resultUpdate = await dynamoDb.update(params).promise();
+
+  if (!resultUpdate) {
+    console.log(resultUpdate);
+    return {
+      statusCode: 400,
+      body: JSON.stringify({error: 'Could not create question' }),
+    };
+  }
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ gameId, questionId: shortId, question, isAsked: false }),
   };
 
   // dynamoDb.update(params, (error) => {
@@ -430,7 +450,7 @@ module.exports.updateQuestion = async (event) => {
 
   return {
     statusCode: 200,
-    body: JSON.stringify(resultUpdate),
+    body: JSON.stringify({ gameId, questionId, question, isAsked }),
   };
 
   // dynamoDb.update(params, (error) => {
@@ -441,6 +461,63 @@ module.exports.updateQuestion = async (event) => {
  
   //   res.json({ gameId, questionId: questionId, question, isAsked });
   // });
+}
+
+// Delete Question endpoint
+module.exports.deleteQuestion = async (event) => {  
+  const { gameId, questionId } = event.pathParameters;
+
+  const result = await dynamoDb.get({
+    TableName: process.env.DYNAMODB_GAME_TABLE,
+    Key: {
+      gameId,
+    },
+  }).promise();
+
+  // find the index
+  const indexToRemove = findWithAttr(result.Item.questions, 'questionId', questionId);
+
+  console.log('Delete question: ', result.Item, event.pathParameters, indexToRemove);
+
+  if (indexToRemove === -1) {
+    // element not found
+    return {
+      statusCode: 400,
+      body: JSON.stringify({error: 'Question not found' }),
+    };
+  } else {
+    const params = {
+      TableName: process.env.DYNAMODB_GAME_TABLE,
+      Key: {
+        gameId,
+      },
+      UpdateExpression: `REMOVE questions[${indexToRemove}]`,
+    };
+
+    const resultUpdate = await dynamoDb.update(params).promise();
+
+    if (!resultUpdate) {
+      console.log(resultUpdate);
+      return {
+        statusCode: 400,
+        body: JSON.stringify({error: 'Could not delete question' }),
+      };
+    }
+  
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ gameId, questionId }),
+    };
+
+    // dynamoDb.update(params, (error) => {
+    //   if (error) {
+    //     console.log(error);
+    //     res.status(400).json({ error: 'Could not delete question' });
+    //   }
+
+    //   res.json({ gameId, questionId });
+    // });
+  }
 }
 
 /** PLAYER */
@@ -629,4 +706,13 @@ module.exports.deletePlayer = async (event) => {
 
   //   res.json({ gameId, playerId });
   // });
+}
+
+function findWithAttr(array, attr, value) {
+  for (var i = 0; i < array.length; i += 1) {
+    if (array[i][attr] === value) {
+      return i;
+    }
+  }
+  return -1;
 }
