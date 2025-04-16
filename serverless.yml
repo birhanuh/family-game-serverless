@@ -31,7 +31,7 @@ functions:
     handler: handler.createGame
     events:
       - httpApi:
-          path: /games
+          path: /games/create
           method: post
   getGames:
     handler: handler.getGames

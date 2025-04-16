@@ -30,7 +30,7 @@ module.exports.getGames = async (event) => {
   const scanParams = {
     TableName: process.env.DYNAMODB_GAME_TABLE,
     Select: 'ALL_ATTRIBUTES',
-    KeyConditions: {
+    KeyConditionExpression: {
       Status: {
         ComparisonOperator: 'EQ',
         AttributeValueList: ['OK'],
@@ -50,7 +50,7 @@ module.exports.getGames = async (event) => {
     }
     return {
       statusCode: 200,
-      body: JSON.stringify(result),
+      body: JSON.stringify({...result, items: result.Items.reverse()}),
     };
   } else {
     console.log(result);
